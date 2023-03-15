@@ -1,4 +1,4 @@
-package ui
+package component
 
 import (
 	"network-change/windows"
@@ -8,10 +8,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func ShowNetworkAdapters(parent fyne.Window) {
+func ShowNetworkAdapters(appInstance fyne.App, parent fyne.Window) {
 	NetworkAdapters, err := windows.GetNetworkAdapters()
 	if err != nil {
-		dialog.ShowInformation("error", "Failed to get network adapters.", App.NewWindow("error"))
+		dialog.ShowInformation("error", "Failed to get network adapters.", appInstance.NewWindow("error"))
+		return
 	}
 
 	list := widget.NewTable(
@@ -49,5 +50,4 @@ func ShowNetworkAdapters(parent fyne.Window) {
 	window := dialog.NewCustom("NetworkAdapters", "test", list, parent)
 	window.Resize(fyne.NewSize(500, 400))
 	window.Show()
-
 }

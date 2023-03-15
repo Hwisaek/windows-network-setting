@@ -28,68 +28,74 @@ type networkAdapter struct {
 	DNSServerSearchOrder []string
 }
 
-func GetNetworkAdapters() (newNetworkAdapters []networkAdapter, err error) {
+func GetNetworkAdapters() ([]networkAdapter, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network interfaces: %s", err)
 	}
 
+	adapters := make([]networkAdapter, 0, len(interfaces))
 	for _, iface := range interfaces {
-		i := networkAdapter{
+		if iface.Flags&net.FlagUp == 0 {
+			continue // interface down
+		}
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue // loopback interface
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network addresses: %s", err)
+		}
+		if len(addrs) == 0 {
+			continue // no address found
+		}
+		adapter := networkAdapter{
 			index: iface.Index,
 			Name:  iface.Name,
 			MAC:   strings.ToUpper(iface.HardwareAddr.String()),
 		}
-
-		addrs, err := iface.Addrs()
-		if err != nil {
-			continue
-		}
-
-		if len(addrs) > 0 {
-			var ip net.IP
-			for _, addr := range addrs {
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ip = v.IP
-				case *net.IPAddr:
-					ip = v.IP
-				}
-
-				if ip != nil && !ip.IsLoopback() && ip.To4() != nil {
-					i.IP = ip.String()
-					break
-				}
+		for _, addr := range addrs {
+			ip, _, err := net.ParseCIDR(addr.String())
+			if err != nil || ip.IsLoopback() {
+				continue
+			}
+			if ip.To4() != nil {
+				adapter.IP = ip.String()
+				break
 			}
 		}
-
-		if i.IP == "" {
-			continue
+		if adapter.IP == "" {
+			continue // no IPv4 address found
 		}
-		newNetworkAdapters = append(newNetworkAdapters, i)
+		adapters = append(adapters, adapter)
 	}
 
-	// Query the Win32_NetworkAdapterConfiguration class to get network information
 	var configs []Win32_NetworkAdapterConfiguration
 	err = wmi.Query("SELECT * FROM Win32_NetworkAdapterConfiguration", &configs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network configuration: %s", err)
 	}
-
-	// Print network information
-	for _, config := range configs {
-		for i := range newNetworkAdapters {
-			if newNetworkAdapters[i].MAC == config.MACAddress {
-				if len(config.IPSubnet) == 0 {
-					newNetworkAdapters = append(newNetworkAdapters[:i], newNetworkAdapters[i+1:]...)
-					break
-				}
-				newNetworkAdapters[i].IPSubnet = config.IPSubnet
-				newNetworkAdapters[i].DefaultIPGateway = config.DefaultIPGateway
-				newNetworkAdapters[i].DNSServerSearchOrder = config.DNSServerSearchOrder
+	for i := range adapters {
+		for _, config := range configs {
+			if strings.ToUpper(config.MACAddress) == adapters[i].MAC {
+				adapters[i].IPSubnet = config.IPSubnet
+				adapters[i].DefaultIPGateway = config.DefaultIPGateway
+				adapters[i].DNSServerSearchOrder = config.DNSServerSearchOrder
 				break
 			}
 		}
 	}
-	return
+	return adapters, nil
+}
+
+func GetNetworks() ([]string, error) {
+	networkAdapters, err := GetNetworkAdapters()
+	if err != nil {
+		return nil, err
+	}
+	networks := make([]string, len(networkAdapters))
+	for i, adapter := range networkAdapters {
+		networks[i] = adapter.Name
+	}
+	return networks, nil
 }
