@@ -15,6 +15,7 @@ type Win32_NetworkAdapterConfiguration struct {
 	DNSServerSearchOrder []string
 	MACAddress           string
 	IPAddress            []string
+	DHCPEnabled          bool
 }
 
 type networkAdapter struct {
@@ -26,6 +27,7 @@ type networkAdapter struct {
 	IPSubnet             []string
 	DefaultIPGateway     []string
 	DNSServerSearchOrder []string
+	IPAutoMode           bool
 }
 
 func GetNetworkAdapters() ([]networkAdapter, error) {
@@ -81,6 +83,7 @@ func GetNetworkAdapters() ([]networkAdapter, error) {
 				adapters[i].IPSubnet = config.IPSubnet
 				adapters[i].DefaultIPGateway = config.DefaultIPGateway
 				adapters[i].DNSServerSearchOrder = config.DNSServerSearchOrder
+				adapters[i].IPAutoMode = config.DHCPEnabled
 				break
 			}
 		}

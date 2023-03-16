@@ -47,7 +47,7 @@ func ShowNetworkAdapters(appInstance fyne.App, parent fyne.Window) {
 	list.SetColumnWidth(0, 150)
 	list.SetColumnWidth(1, 150)
 
-	window := dialog.NewCustom("NetworkAdapters", "test", list, parent)
+	window := dialog.NewCustom("NetworkAdapters", "Close", list, parent)
 	window.Resize(fyne.NewSize(500, 400))
 	window.Show()
 }

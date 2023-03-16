@@ -19,7 +19,7 @@ func InitApp() {
 	w := appInstance.NewWindow(consts.Title)
 	w.Resize(fyne.NewSize(600, 700))
 
-	grid := layout.GetBody(appInstance, w)
+	grid := layout.NewBody(appInstance, w)
 	w.SetContent(grid)
 
 	w.ShowAndRun()

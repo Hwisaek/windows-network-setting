@@ -9,13 +9,13 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func GetBody(appInstance fyne.App, w fyne.Window) *fyne.Container {
-	header := GetHeader(appInstance, w)
+func NewBody(appInstance fyne.App, w fyne.Window) *fyne.Container {
+	header := NewHeader(appInstance, w)
 	line1 := createLine("IP Address", status.IP)
-	line2 := createLine("Subnetmask", status.Subnetmask)
+	line2 := createLine("Subnetmask", status.SubnetMask)
 	line3 := createLine("Gateway", status.Gateway)
 	line4 := createLine("Default DNS", status.DNS)
-	footer := GetFooter()
+	footer := NewFooter(w)
 
 	return container.New(layout.NewGridLayout(1),
 		header,
